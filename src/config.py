@@ -20,6 +20,17 @@ class Config:
     
     # 兴趣提示词
     INTEREST_PROMPT_FILE = os.getenv('INTEREST_PROMPT_FILE', 'prompts/interest.txt')
+
+    # 关键词预筛选（逗号分隔）
+    PREFILTER_KEYWORDS = [item.strip() for item in os.getenv('PREFILTER_KEYWORDS', '').split(',') if item.strip()]
+    PREFILTER_NEGATIVE_KEYWORDS = [item.strip() for item in os.getenv('PREFILTER_NEGATIVE_KEYWORDS', '').split(',') if item.strip()]
+
+    # 详细摘要数量（Top N）
+    TOP_N_DETAILED = int(os.getenv('TOP_N_DETAILED', '5'))
+
+    # LLM 缓存配置
+    LLM_CACHE_ENABLED = os.getenv('LLM_CACHE_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+    LLM_CACHE_FILE = os.getenv('LLM_CACHE_FILE', '.llm_cache.json')
     
     # 邮件配置
     SMTP_HOST = os.getenv('SMTP_HOST', 'smtp.gmail.com')

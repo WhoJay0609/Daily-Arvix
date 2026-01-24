@@ -4,11 +4,21 @@ import time
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional
+from typing import Optional, Iterable
 
 import requests
 
 from .config import Config
+
+
+def _normalize_recipients(value: Optional[Iterable[str]]) -> list:
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        items = list(value)
+    else:
+        items = str(value).replace(";", ",").split(",")
+    return [item.strip() for item in items if item and item.strip()]
 
 
 def send_email(subject: str, body: str, to_addr: Optional[str] = None, max_retries: int = 3) -> bool:
@@ -24,15 +34,18 @@ def send_email(subject: str, body: str, to_addr: Optional[str] = None, max_retri
     Returns:
         bool: 是否发送成功
     """
-    if not Config.MAIL_FROM or not Config.MAIL_TO:
-        print("未配置 MAIL_FROM/MAIL_TO，跳过邮件发送")
+    if not Config.MAIL_FROM:
+        print("未配置 MAIL_FROM，跳过邮件发送")
         return False
 
-    to_addr = to_addr or Config.MAIL_TO
+    recipients = _normalize_recipients(to_addr or Config.MAIL_TO)
+    if not recipients:
+        print("未配置 MAIL_TO，跳过邮件发送")
+        return False
 
     msg = MIMEMultipart()
     msg["From"] = Config.MAIL_FROM
-    msg["To"] = to_addr
+    msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
 
     msg.attach(MIMEText(body, "plain", "utf-8"))
@@ -44,7 +57,7 @@ def send_email(subject: str, body: str, to_addr: Optional[str] = None, max_retri
                 server.ehlo()
                 if Config.SMTP_USER and Config.SMTP_PASS:
                     server.login(Config.SMTP_USER, Config.SMTP_PASS)
-                server.send_message(msg)
+                server.send_message(msg, to_addrs=recipients)
         else:
             with smtplib.SMTP(Config.SMTP_HOST, port, timeout=30) as server:
                 server.ehlo()
@@ -52,7 +65,7 @@ def send_email(subject: str, body: str, to_addr: Optional[str] = None, max_retri
                 server.ehlo()
                 if Config.SMTP_USER and Config.SMTP_PASS:
                     server.login(Config.SMTP_USER, Config.SMTP_PASS)
-                server.send_message(msg)
+                server.send_message(msg, to_addrs=recipients)
 
     # 构建尝试序列（优先当前配置，其次常用端口兜底）
     attempts = []

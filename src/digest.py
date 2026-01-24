@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 
 from .arxiv_client import Paper
+from .utils import build_pdf_link
 
 
 def filter_relevant(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -51,25 +52,42 @@ def render_daily_digest(
             background = item.get("background", "")
             motivation = item.get("motivation", "")
             method = item.get("method", "")
+            tldr = item.get("tldr", "")
+            contributions = item.get("contributions", "")
+            limitations = item.get("limitations", "")
+            use_cases = item.get("use_cases", "")
             summary = item.get("summary_cn", "")
             authors = ", ".join(paper.authors[:3]) if paper and paper.authors else ""
             if paper and len(paper.authors) > 3:
                 authors += " 等"
             affiliations = _format_affiliations(item.get("affiliations"))
+            categories = ", ".join(paper.categories) if paper and paper.categories else "未知分类"
+            pdf_link = build_pdf_link(paper.link if paper else "")
 
             body += f"### {idx}. {paper.title if paper else '未知标题'}\n\n"
             body += f"**评分**: {score:.1f}/10  \n"
             body += f"**作者**: {authors}  \n"
             body += f"**单位**: {affiliations}  \n"
+            body += f"**分类**: {categories}  \n"
             body += f"**日期**: {paper.published[:10] if paper and paper.published else ''}  \n"
             body += f"**链接**: {paper.link if paper else ''}  \n\n"
+            if pdf_link:
+                body += f"**PDF**: {pdf_link}  \n\n"
             
+            if tldr:
+                body += f"**TL;DR**: {tldr}  \n\n"
             if background:
                 body += f"**背景**: {background}  \n\n"
             if motivation:
                 body += f"**动机**: {motivation}  \n\n"
             if method:
                 body += f"**方法**: {method}  \n\n"
+            if contributions:
+                body += f"**贡献**: {contributions}  \n\n"
+            if limitations:
+                body += f"**局限**: {limitations}  \n\n"
+            if use_cases:
+                body += f"**适用场景**: {use_cases}  \n\n"
             if summary:
                 body += f"**总结**: {summary}  \n\n"
             if reason:
@@ -88,9 +106,16 @@ def render_daily_digest(
             if paper and len(paper.authors) > 2:
                 authors += " 等"
             affiliations = _format_affiliations(item.get("affiliations"))
+            categories = ", ".join(paper.categories) if paper and paper.categories else "未知分类"
+            pdf_link = build_pdf_link(paper.link if paper else "")
+            pdf_part = f" | [PDF]({pdf_link})" if pdf_link else ""
 
             body += f"**{idx}. {paper.title if paper else '未知标题'}**  \n"
-            body += f"评分: {score:.1f}/10 | 作者: {authors} | 单位: {affiliations} | [链接]({paper.link if paper else ''})  \n"
+            body += (
+                f"评分: {score:.1f}/10 | 作者: {authors} | 单位: {affiliations} | "
+                f"分类: {categories} | [链接]({paper.link if paper else ''})"
+                f"{pdf_part}  \n"
+            )
             if summary:
                 body += f"{summary}  \n\n"
             else:

@@ -4,6 +4,7 @@ from typing import Set
 from datetime import datetime
 
 from .config import Config
+from .utils import extract_arxiv_id
 
 
 class PaperHistory:
@@ -36,15 +37,24 @@ class PaperHistory:
     
     def save_paper(self, arxiv_id: str):
         """保存单篇论文记录"""
+        if not arxiv_id:
+            return
+        history = self.load_history()
+        if arxiv_id in history:
+            return
         date_str = datetime.now().strftime('%Y-%m-%d')
         with open(self.history_file, 'a', encoding='utf-8') as f:
             f.write(f"{arxiv_id}|{date_str}\n")
     
     def save_papers(self, arxiv_ids: list):
         """批量保存论文记录"""
+        history = self.load_history()
+        new_ids = [arxiv_id for arxiv_id in arxiv_ids if arxiv_id and arxiv_id not in history]
+        if not new_ids:
+            return
         date_str = datetime.now().strftime('%Y-%m-%d')
         with open(self.history_file, 'a', encoding='utf-8') as f:
-            for arxiv_id in arxiv_ids:
+            for arxiv_id in new_ids:
                 f.write(f"{arxiv_id}|{date_str}\n")
     
     def is_processed(self, arxiv_id: str) -> bool:
@@ -67,14 +77,7 @@ class PaperHistory:
     
     def _extract_arxiv_id(self, link: str) -> str:
         """从链接中提取 arxiv ID"""
-        # 示例: https://arxiv.org/abs/2401.12345
-        if 'arxiv.org' in link:
-            parts = link.split('/')
-            if 'abs' in parts:
-                idx = parts.index('abs')
-                if idx + 1 < len(parts):
-                    return parts[idx + 1]
-        return ""
+        return extract_arxiv_id(link)
     
     def get_stats(self) -> dict:
         """获取历史统计信息"""
