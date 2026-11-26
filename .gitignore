@@ -6,4 +6,5 @@ __pycache__/
 venv/
 *.log
 .DS_Store
-.paper_history.txt.paper_history.txt
+.paper_history.txt
+.llm_cache.json
